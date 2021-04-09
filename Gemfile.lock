@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    back_ops (0.1.0)
+    back_ops (0.2.0)
       activerecord (>= 6.1)
       pg (>= 1.2)
       redis (>= 4.2)

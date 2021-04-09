@@ -29,6 +29,7 @@ module BackOps
 
     def self.setup_operation_and_actions(context, actions)
       raise ArgumentError, 'Cannot process empty actions' if actions.blank?
+      context.deep_stringify_keys!
 
       operation = BackOps::Operation.create_or_find_by({
         params_hash: Digest::MD5.hexdigest("#{context}|#{actions}"),

@@ -37,4 +37,13 @@ RSpec.describe BackOps do
     completed_actions_count = BackOps::Action.where(operation: operation).where.not(completed_at: nil).count
     expect(completed_actions_count).to eq(2)
   end
+
+  it 'gets and sets values in the context' do
+    params = { widget_id: widget.id }
+    test_value = 'test'
+    ProcessWidget.call(params)
+    operation = BackOps::Operation.where("context @> ?", params.to_json).first
+    operation.set(:test, test_value)
+    expect(operation.get(:test)).to eq(test_value)
+  end
 end

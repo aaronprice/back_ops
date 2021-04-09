@@ -39,7 +39,7 @@ module Subscriptions
     class Fullfillment
       def self.call(subscription)
         BackOps::Worker.perform_async({
-          'subscription_id' => subscription.id
+          subscription_id: subscription.id
         }, [
           Subscriptions::Actions::Fulfillment::ChargeCreditCard,
           Subscriptions::Actions::Fulfillment::SendEmailReceipt
@@ -58,7 +58,7 @@ module Subscriptions
     module Fulfillment
       class ChargeCreditCard
         def self.call(operation)
-          subscription_id = operation.context['subscription_id']
+          subscription_id = operation.get(:subscription_id)
           subscription = Subscription.find(subscription_id)
           # ...
         end
