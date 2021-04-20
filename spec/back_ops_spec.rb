@@ -13,10 +13,10 @@ RSpec.describe BackOps do
   it 'creates actions' do
     expect {
       ProcessWidget.call({ widget_id: widget.id })
-    }.to change(BackOps::Action, :count).by(2)
+    }.to change(BackOps::Action, :count).by(3)
   end
 
-  it 'processed actions' do 
+  it 'processed actions' do
     expect(widget.state).to eq('new')
     ProcessWidget.call({ widget_id: widget.id })
     widget.reload

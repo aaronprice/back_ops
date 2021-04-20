@@ -1,11 +1,11 @@
 module Actions
-  class SetToInProgress
+  class SetToPathOne
     def self.call(action)
       widget = Widget.find(action.get(:widget_id))
-      widget.state = 'in_progress'
+      widget.state = 'path_1'
       widget.save!
 
-      action.jump_to(:path_1)
+      action.jump_to(main: Actions::SetToProcessed)
     end
   end
 end

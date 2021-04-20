@@ -1,8 +1,15 @@
 class ProcessWidget
   def self.call(params)
-    BackOps::Worker.perform_async(params, [
-      Actions::SetToInProgress,
-      Actions::SetToProcessed
-    ])
+    actions = {
+      main: [
+        Actions::SetToInProgress,
+        Actions::SetToProcessed
+      ],
+      path_1: [
+        Actions::SetToPathOne
+      ]
+    }
+
+    BackOps::Worker.perform_async(params, actions)
   end
 end
