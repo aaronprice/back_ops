@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_04_30_151503) do
+ActiveRecord::Schema.define(version: 2021_04_30_222958) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -18,9 +18,7 @@ ActiveRecord::Schema.define(version: 2021_04_30_151503) do
   create_table "back_ops_actions", force: :cascade do |t|
     t.bigint "operation_id"
     t.integer "order", default: 0, null: false
-    t.text "branch"
     t.text "name"
-    t.datetime "perform_at"
     t.text "error_message"
     t.text "stack_trace"
     t.datetime "errored_at"
@@ -28,6 +26,8 @@ ActiveRecord::Schema.define(version: 2021_04_30_151503) do
     t.integer "attempts_count", default: 0, null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.text "branch"
+    t.datetime "perform_at"
     t.index ["operation_id"], name: "index_back_ops_actions_on_operation_id"
   end
 
@@ -35,10 +35,10 @@ ActiveRecord::Schema.define(version: 2021_04_30_151503) do
     t.string "name"
     t.string "params_hash"
     t.jsonb "globals", default: {}, null: false
-    t.bigint "next_action_id"
     t.datetime "completed_at"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.bigint "next_action_id"
     t.index ["name", "params_hash"], name: "index_back_ops_operations_on_name_and_params_hash"
   end
 

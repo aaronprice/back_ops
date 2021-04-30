@@ -25,7 +25,7 @@ $ gem install back_ops
 Copy the migration from the gem to your application, then run migrations.
 
 ```bash
-$ rails g back_ops:install
+$ rails g back_ops:install --skip
 $ rails db:migrate
 ```
 
