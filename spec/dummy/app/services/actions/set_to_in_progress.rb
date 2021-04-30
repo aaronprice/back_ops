@@ -5,7 +5,7 @@ module Actions
       widget.state = 'in_progress'
       widget.save!
 
-      action.jump_to(:path_1)
+      action.jump_to(:branch_1)
     end
   end
 end

@@ -56,22 +56,28 @@ module BackOps
     def jump_to(pointer)
       # :branch
       # { branch: Action }
+      next_action = nil
+
       if pointer.is_a?(Symbol)
-        self.operation.next_action = self.operation.actions.
-                                      where(branch: pointer).
-                                      order(order: :asc).
-                                      limit(1).
-                                      first
+        next_action = self.operation.actions.
+                        where(branch: pointer).
+                        order(order: :asc).
+                        limit(1).
+                        first
       elsif pointer.is_a?(Hash)
         branch, name = pointer.first
-        self.operation.next_action = self.operation.actions.
-                                      where(name: name, branch: branch).
-                                      order(order: :asc).
-                                      limit(1).
-                                      first
+        next_action = self.operation.actions.
+                        where(name: name, branch: branch).
+                        order(order: :asc).
+                        limit(1).
+                        first
       else
         raise ArgumentError, 'jump_to only accepts as Symbol or a Hash'
       end
+
+      raise "Could not jump_to(#{pointer.inspect}). Action not found." if next_action.nil?
+
+      self.operation.next_action = next_action
       self.operation.save!
     end
 
