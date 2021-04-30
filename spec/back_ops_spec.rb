@@ -26,23 +26,23 @@ RSpec.describe BackOps do
   it 'completes job' do
     params = { widget_id: widget.id }
     ProcessWidget.call(params)
-    operation = BackOps::Operation.where("context @> ?", params.to_json).first
+    operation = BackOps::Operation.where("globals @> ?", params.to_json).first
     expect(operation.completed_at.present?).to eq(true)
   end
 
   it 'completes actions' do
     params = { widget_id: widget.id }
     ProcessWidget.call(params)
-    operation = BackOps::Operation.where("context @> ?", params.to_json).first
+    operation = BackOps::Operation.where("globals @> ?", params.to_json).first
     completed_actions_count = BackOps::Action.where(operation: operation).where.not(completed_at: nil).count
     expect(completed_actions_count).to eq(2)
   end
 
-  it 'gets and sets values in the context' do
+  it 'gets and sets values in the globals' do
     params = { widget_id: widget.id }
     test_value = 'test'
     ProcessWidget.call(params)
-    operation = BackOps::Operation.where("context @> ?", params.to_json).first
+    operation = BackOps::Operation.where("globals @> ?", params.to_json).first
     operation.set(:test, test_value)
     expect(operation.get(:test)).to eq(test_value)
   end

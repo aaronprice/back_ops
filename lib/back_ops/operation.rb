@@ -17,8 +17,8 @@ module BackOps
 
     # == Scopes ===============================================================
 
-    scope :context_contains, ->(hash) {
-      where('context @> ?', hash.to_json)
+    scope :globals_contains, ->(hash) {
+      where('globals @> ?', hash.to_json)
     }
 
     # == Callbacks ============================================================
@@ -31,18 +31,18 @@ module BackOps
 
     def first_action
       self.actions.
-        where(back_ops_actions: { path: 'main' }).
+        where(back_ops_actions: { branch: 'main' }).
         order(order: :asc).
         limit(1).
         first
     end
 
     def get(field)
-      context[field.to_s]
+      globals[field.to_s]
     end
 
     def set(field, value)
-      context[field.to_s] = value
+      globals[field.to_s] = value
       save!
     end
 

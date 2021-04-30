@@ -5,7 +5,7 @@ class CreateBackOpsTables < ActiveRecord::Migration[6.1]
     create_table :back_ops_operations do |t|
       t.string :name
       t.string :params_hash
-      t.jsonb :context, null: false, default: {}
+      t.jsonb :globals, null: false, default: {}
       t.integer :next_action_id, limit: 8
       t.timestamp :completed_at
 
@@ -17,7 +17,7 @@ class CreateBackOpsTables < ActiveRecord::Migration[6.1]
     create_table :back_ops_actions do |t|
       t.integer :operation_id, limit: 8
       t.integer :order, null: false, default: 0
-      t.text :path
+      t.text :branch
       t.text :name
       t.jsonb :locals, null: false, default: {}
       t.timestamp :perform_at

@@ -1,6 +1,6 @@
 # BackOps
 
-Back Ops is intended for background processing of jobs that require multiple tasks to be completed. It executes each task in sequence in a separate Sidekiq worker. This allows for jobs to be retryable if failures occur, but completed tasks are not retried. 
+Back Ops is intended for background processing of jobs that require multiple tasks to be completed. It executes each task in sequence in a separate Sidekiq worker. This allows for jobs to be retryable if failures occur, but completed tasks are not retried.
 
 Progress and error states are tracked in the database, so that that you are always aware of what was processed, and if any task fails, where the failure occured in the process, what the error message is, what the stack trace is, so you know what's happening and you can always retry the job from the failed task.
 
@@ -50,7 +50,7 @@ module Subscriptions
 end
 ```
 
-Each action receives the operation object which contains the context.
+Each action receives the operation object which contains the global variables.
 
 ```ruby
 module Subscriptions
@@ -72,7 +72,7 @@ You now also have full transparency into each operation and can view it in the a
 
 ```ruby
 params = { 'subscription_id' => subscription.id }
-operation = BackOps::Operation.includes(:actions).where("name = 'Subscriptions::Operations::Fulfillment' AND context @> ?", params.to_json).first
+operation = BackOps::Operation.includes(:actions).where("name = 'Subscriptions::Operations::Fulfillment' AND globals @> ?", params.to_json).first
 ```
 
 

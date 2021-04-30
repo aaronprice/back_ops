@@ -18,52 +18,52 @@ RSpec.describe BackOps::Worker do
     end
 
     it 'creates actions' do
-      context = { seed: '21b214' }
+      globals = { seed: '21b214' }
       locals = { seed: '894f16' }
 
       expect {
-        BackOps::Worker.perform_async(context, {
+        BackOps::Worker.perform_async(globals, {
           main: [
             Actions::SetToInProgress,
-            Actions::SetToPathOne
+            Actions::SetToBranchOne
           ],
-          path_1: [
+          branch_1: [
             [Actions::SetToProcessed, { perform_at: future_time }]
           ],
-          path_2: [
-            [Actions::SetToPathOne, { locals: locals }]
+          branch_2: [
+            [Actions::SetToBranchOne, { locals: locals }]
           ]
         })
-        operation = BackOps::Operation.context_contains(context).first
+        operation = BackOps::Operation.globals_contains(globals).first
 
         expect(operation.actions.where(perform_at: nil).count).to eq(3)
         expect(operation.actions.where.not(perform_at: nil).count).to eq(1)
 
-        expect(operation.actions.where(path: 'main').count).to eq(2)
-        expect(operation.actions.where(path: 'path_1').count).to eq(1)
-        expect(operation.actions.where(path: 'path_2').count).to eq(1)
+        expect(operation.actions.where(branch: 'main').count).to eq(2)
+        expect(operation.actions.where(branch: 'branch_1').count).to eq(1)
+        expect(operation.actions.where(branch: 'branch_2').count).to eq(1)
 
         expect(operation.actions.locals_contains(locals).count).to eq(1)
       }.to change(BackOps::Action, :count).by(4)
     end
 
     it 'sets next_action' do
-      context = { seed: 'fef5fd' }
+      globals = { seed: 'fef5fd' }
       locals = { seed: '1e7305' }
 
-      BackOps::Worker.perform_async(context, {
+      BackOps::Worker.perform_async(globals, {
         main: [
           Actions::SetToInProgress,
-          Actions::SetToPathOne
+          Actions::SetToBranchOne
         ],
-        path_1: [
+        branch_1: [
           [Actions::SetToProcessed, { perform_at: future_time }]
         ],
-        path_2: [
-          [Actions::SetToPathOne, { locals: locals }]
+        branch_2: [
+          [Actions::SetToBranchOne, { locals: locals }]
         ]
       })
-      operation = BackOps::Operation.context_contains(context).first
+      operation = BackOps::Operation.globals_contains(globals).first
       expect(operation.next_action).to eq(operation.actions.order(order: :asc).first)
     end
 

@@ -13,36 +13,36 @@ module BackOps
 
     # == Class Methods ========================================================
 
-    def self.perform_async(context, actions)
-      operation = setup_operation_and_actions(context, actions)
+    def self.perform_async(globals, actions)
+      operation = setup_operation_and_actions(globals, actions)
       super(operation.id)
     end
 
-    def self.perform_in(interval, context, actions)
-      operation = setup_operation_and_actions(context, actions)
+    def self.perform_in(interval, globals, actions)
+      operation = setup_operation_and_actions(globals, actions)
       super(interval, operation.id)
     end
 
-    def self.perform_at(interval, context, action)
-      perform_in(interval, context, action)
+    def self.perform_at(interval, globals, action)
+      perform_in(interval, globals, action)
     end
 
-    def self.setup_operation_and_actions(context, paths)
-      raise ArgumentError, 'Cannot process empty actions' if paths.blank?
+    def self.setup_operation_and_actions(globals, branches)
+      raise ArgumentError, 'Cannot process empty actions' if branches.blank?
 
-      context ||= {}
-      context.deep_stringify_keys!
+      globals ||= {}
+      globals.deep_stringify_keys!
 
       operation = BackOps::Operation.create_or_find_by({
-        params_hash: Digest::MD5.hexdigest("#{context}|#{paths}"),
+        params_hash: Digest::MD5.hexdigest("#{globals}|#{branches}"),
         name: ancestors[1]
       })
-      operation.context.merge!(context)
+      operation.globals.merge!(globals)
       operation.save!
 
       counter = 0
 
-      paths.each do |path, actions|
+      branches.each do |branch, actions|
         actions.each do |action_with_options|
           action_name, options = [*action_with_options]
 
@@ -53,7 +53,7 @@ module BackOps
 
           action = BackOps::Action.create_or_find_by({
             operation: operation,
-            path: path,
+            branch: branch,
             name: action_name,
             locals: options['locals'],
             perform_at: options['perform_at'],

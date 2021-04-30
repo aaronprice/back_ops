@@ -26,17 +26,17 @@ module BackOps
     self.table_name = 'back_ops_actions'
 
     def self.after(action)
-      next_on_path = BackOps::Action.where(operation: action.operation, path: action.path).
+      next_on_branch = BackOps::Action.where(operation: action.operation, branch: action.branch).
                       where('back_ops_actions.order > ?', action.order).
                       order(order: :asc).
                       limit(1).
                       first
 
-      return next_on_path if next_on_path.present?
+      return next_on_branch if next_on_branch.present?
 
       BackOps::Action.where({
           operation: action.operation,
-          path: 'main',
+          branch: 'main',
           completed_at: nil
         }).
         limit(1).
@@ -67,13 +67,13 @@ module BackOps
     end
 
     def jump_to(pointer)
-      # :path
-      # { path: Action }
-      # { path: [Action, locals] }
+      # :branch
+      # { branch: Action }
+      # { branch: [Action, locals] }
       if pointer.is_a?(Symbol)
-        self.operation.next_action = self.operation.actions.where(path: pointer).order(order: :asc).limit(1).first
+        self.operation.next_action = self.operation.actions.where(branch: pointer).order(order: :asc).limit(1).first
       elsif pointer.is_a?(Hash)
-        path, action = pointer.first
+        branch, action = pointer.first
         name, locals = [*action]
         locals ||= {}
         locals.deep_stringify_keys!
@@ -81,7 +81,7 @@ module BackOps
         locals_query = locals.present? ? ['locals @> ?', locals] : {}
 
         self.operation.next_action = self.operation.actions.
-                                      where(path: path).
+                                      where(branch: branch).
                                       where(locals_query).
                                       order(order: :asc).
                                       limit(1).

@@ -1,5 +1,5 @@
 module Actions
-  class SetToPathOne
+  class SetToBranchOne
     def self.call(action)
       widget = Widget.find(action.get(:widget_id))
       widget.state = 'path_1'

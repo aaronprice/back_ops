@@ -5,8 +5,8 @@ class ProcessWidget
         Actions::SetToInProgress,
         Actions::SetToProcessed
       ],
-      path_1: [
-        Actions::SetToPathOne
+      branch_1: [
+        Actions::SetToBranchOne
       ]
     }
 
