@@ -13,10 +13,10 @@ RSpec.describe BackOps do
   it 'creates actions' do
     expect {
       ProcessWidget.call({ widget_id: widget.id })
-    }.to change(BackOps::Action, :count).by(2)
+    }.to change(BackOps::Action, :count).by(3)
   end
 
-  it 'processed actions' do 
+  it 'processed actions' do
     expect(widget.state).to eq('new')
     ProcessWidget.call({ widget_id: widget.id })
     widget.reload
@@ -26,23 +26,23 @@ RSpec.describe BackOps do
   it 'completes job' do
     params = { widget_id: widget.id }
     ProcessWidget.call(params)
-    operation = BackOps::Operation.where("context @> ?", params.to_json).first
+    operation = BackOps::Operation.where("globals @> ?", params.to_json).first
     expect(operation.completed_at.present?).to eq(true)
   end
 
   it 'completes actions' do
     params = { widget_id: widget.id }
     ProcessWidget.call(params)
-    operation = BackOps::Operation.where("context @> ?", params.to_json).first
+    operation = BackOps::Operation.where("globals @> ?", params.to_json).first
     completed_actions_count = BackOps::Action.where(operation: operation).where.not(completed_at: nil).count
     expect(completed_actions_count).to eq(2)
   end
 
-  it 'gets and sets values in the context' do
+  it 'gets and sets values in the globals' do
     params = { widget_id: widget.id }
     test_value = 'test'
     ProcessWidget.call(params)
-    operation = BackOps::Operation.where("context @> ?", params.to_json).first
+    operation = BackOps::Operation.where("globals @> ?", params.to_json).first
     operation.set(:test, test_value)
     expect(operation.get(:test)).to eq(test_value)
   end

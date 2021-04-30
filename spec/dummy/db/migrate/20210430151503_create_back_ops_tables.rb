@@ -12,7 +12,7 @@ class CreateBackOpsTables < ActiveRecord::Migration[6.1]
     end
 
     add_index :back_ops_operations, [:name, :params_hash]
-    
+
     create_table :back_ops_actions do |t|
       t.integer :operation_id, limit: 8
       t.integer :order, null: false, default: 0

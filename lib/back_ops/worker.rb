@@ -13,38 +13,57 @@ module BackOps
 
     # == Class Methods ========================================================
 
-    def self.perform_async(context, actions)
-      operation = setup_operation_and_actions(context, actions)
+    def self.perform_async(globals, actions)
+      operation = setup_operation_and_actions(globals, actions)
       super(operation.id)
     end
 
-    def self.perform_in(interval, context, actions)
-      operation = setup_operation_and_actions(context, actions)
+    def self.perform_in(interval, globals, actions)
+      operation = setup_operation_and_actions(globals, actions)
       super(interval, operation.id)
     end
 
-    def self.perform_at(interval, context, action)
-      perform_in(interval, context, action)
+    def self.perform_at(interval, globals, action)
+      perform_in(interval, globals, action)
     end
 
-    def self.setup_operation_and_actions(context, actions)
-      raise ArgumentError, 'Cannot process empty actions' if actions.blank?
-      context.deep_stringify_keys!
+    def self.setup_operation_and_actions(globals, branches)
+      raise ArgumentError, 'Cannot process empty actions' if branches.blank?
+
+      globals ||= {}
+      globals.deep_stringify_keys!
 
       operation = BackOps::Operation.create_or_find_by({
-        params_hash: Digest::MD5.hexdigest("#{context}|#{actions}"),
+        params_hash: Digest::MD5.hexdigest("#{globals}|#{branches}"),
         name: ancestors[1]
       })
-      operation.context.merge!(context)
+      operation.globals.merge!(globals)
       operation.save!
-      
-      actions.each_with_index do |action, index|
-        BackOps::Action.create_or_find_by({
-          operation: operation,
-          name: action,
-          order: index
-        })
+
+      counter = 0
+
+      branches.each do |branch, actions|
+        actions.each do |action_with_options|
+          action_name, options = [*action_with_options]
+
+          options = {
+            'perform_at' => nil
+          }.merge(options.try(:deep_stringify_keys) || {})
+
+          action = BackOps::Action.create_or_find_by({
+            operation: operation,
+            branch: branch,
+            name: action_name,
+            perform_at: options['perform_at'],
+            order: counter
+          })
+
+          counter += 1
+        end
       end
+
+      operation.next_action = operation.first_action
+      operation.save!
 
       operation
     end
@@ -59,45 +78,39 @@ module BackOps
     private
 
     def process(operation)
-      action_items = BackOps::Action.where({
-        operation: operation,
-        completed_at: nil
-      }).order(order: :asc)
+      action = operation.next_action
+      return true if action.blank?
+      return process_next(operation, at: action.perform_at.to_f) if action.premature?
 
-      return true if action_items.blank?
-
-      active_item = action_items[0]
-      next_item = action_items[1]
-
-      if active_item.errored_at.present?
-        active_item.errored_at = nil
-        active_item.error_message = nil
-        active_item.stack_trace = nil
-        active_item.save!
-      end
-      
       begin
-        active_item.name.constantize.call(operation)
+        action.name.constantize.call(action)
+        action.mark_completed
 
-        active_item.completed_at = Time.zone.now
-        active_item.attempts_count += 1
-        active_item.save!
+        operation.next_action = BackOps::Action.after(action)
+        operation.save!
 
-        if next_item.present?
-          Sidekiq::Client.push('class' => self.class.name, 'args' => [operation.id])
+        if operation.next_action.present?
+          process_next(operation)
         else
-          operation.completed_at = active_item.completed_at
+          operation.completed_at = action.completed_at
           operation.save!
         end
-      rescue => e
-        active_item.error_message = e.message
-        active_item.stack_trace = e.backtrace
-        active_item.errored_at = Time.zone.now
-        active_item.attempts_count += 1
-        active_item.save!
 
+      rescue => e
+        action.mark_errored(e)
         raise
       end
+    end
+
+    def process_next(operation, options = {})
+      options.deep_stringify_keys!
+
+      Sidekiq::Client.push({
+        'class' => self.class.name,
+        'args' => [operation.id]
+      }.merge(options))
+
+      true
     end
   end
 end
