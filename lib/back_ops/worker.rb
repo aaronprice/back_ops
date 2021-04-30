@@ -47,7 +47,6 @@ module BackOps
           action_name, options = [*action_with_options]
 
           options = {
-            'locals' => {},
             'perform_at' => nil
           }.merge(options.try(:deep_stringify_keys) || {})
 
@@ -55,7 +54,6 @@ module BackOps
             operation: operation,
             branch: branch,
             name: action_name,
-            locals: options['locals'],
             perform_at: options['perform_at'],
             order: counter
           })

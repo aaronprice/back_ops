@@ -19,7 +19,6 @@ RSpec.describe BackOps::Worker do
 
     it 'creates actions' do
       globals = { seed: '21b214' }
-      locals = { seed: '894f16' }
 
       expect {
         BackOps::Worker.perform_async(globals, {
@@ -31,7 +30,7 @@ RSpec.describe BackOps::Worker do
             [Actions::SetToProcessed, { perform_at: future_time }]
           ],
           branch_2: [
-            [Actions::SetToBranchOne, { locals: locals }]
+            Actions::SetToBranchOne
           ]
         })
         operation = BackOps::Operation.globals_contains(globals).first
@@ -43,13 +42,11 @@ RSpec.describe BackOps::Worker do
         expect(operation.actions.where(branch: 'branch_1').count).to eq(1)
         expect(operation.actions.where(branch: 'branch_2').count).to eq(1)
 
-        expect(operation.actions.locals_contains(locals).count).to eq(1)
       }.to change(BackOps::Action, :count).by(4)
     end
 
     it 'sets next_action' do
       globals = { seed: 'fef5fd' }
-      locals = { seed: '1e7305' }
 
       BackOps::Worker.perform_async(globals, {
         main: [
@@ -60,7 +57,7 @@ RSpec.describe BackOps::Worker do
           [Actions::SetToProcessed, { perform_at: future_time }]
         ],
         branch_2: [
-          [Actions::SetToBranchOne, { locals: locals }]
+          Actions::SetToBranchOne
         ]
       })
       operation = BackOps::Operation.globals_contains(globals).first

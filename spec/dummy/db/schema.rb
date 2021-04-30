@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_04_30_145157) do
+ActiveRecord::Schema.define(version: 2021_04_30_151503) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -20,7 +20,6 @@ ActiveRecord::Schema.define(version: 2021_04_30_145157) do
     t.integer "order", default: 0, null: false
     t.text "branch"
     t.text "name"
-    t.jsonb "locals", default: {}, null: false
     t.datetime "perform_at"
     t.text "error_message"
     t.text "stack_trace"

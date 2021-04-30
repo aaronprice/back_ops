@@ -19,7 +19,6 @@ class CreateBackOpsTables < ActiveRecord::Migration[6.1]
       t.integer :order, null: false, default: 0
       t.text :branch
       t.text :name
-      t.jsonb :locals, null: false, default: {}
       t.timestamp :perform_at
       t.text :error_message
       t.text :stack_trace

@@ -15,10 +15,6 @@ module BackOps
 
     # == Scopes ===============================================================
 
-    scope :locals_contains, ->(hash) {
-      where('locals @> ?', hash.to_json)
-    }
-
     # == Callbacks ============================================================
 
     # == Class Methods ========================================================
@@ -57,32 +53,19 @@ module BackOps
       self.operation.set(field, value)
     end
 
-    def get_local(field)
-      self.locals[field]
-    end
-
-    def set_local(field, value)
-      self.locals[field] = value
-      self.save!
-    end
-
     def jump_to(pointer)
       # :branch
       # { branch: Action }
-      # { branch: [Action, locals] }
       if pointer.is_a?(Symbol)
-        self.operation.next_action = self.operation.actions.where(branch: pointer).order(order: :asc).limit(1).first
-      elsif pointer.is_a?(Hash)
-        branch, action = pointer.first
-        name, locals = [*action]
-        locals ||= {}
-        locals.deep_stringify_keys!
-
-        locals_query = locals.present? ? ['locals @> ?', locals] : {}
-
         self.operation.next_action = self.operation.actions.
-                                      where(branch: branch).
-                                      where(locals_query).
+                                      where(branch: pointer).
+                                      order(order: :asc).
+                                      limit(1).
+                                      first
+      elsif pointer.is_a?(Hash)
+        branch, name = pointer.first
+        self.operation.next_action = self.operation.actions.
+                                      where(name: name, branch: branch).
                                       order(order: :asc).
                                       limit(1).
                                       first
