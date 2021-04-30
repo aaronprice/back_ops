@@ -1,7 +1,7 @@
 module Actions
   class SetToProcessed
-    def self.call(operation)
-      widget = Widget.find(operation.get('widget_id'))
+    def self.call(action)
+      widget = Widget.find(action.get('widget_id'))
       widget.state = 'processed'
       widget.save!
     end

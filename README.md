@@ -1,6 +1,6 @@
 # BackOps
 
-Back Ops is intended for background processing of jobs that require multiple tasks to be completed. It executes each task in sequence in a separate Sidekiq worker. This allows for jobs to be retryable if failures occur, but completed tasks are not retried. 
+Back Ops is intended for background processing of jobs that require multiple tasks to be completed. It executes each task in sequence in a separate Sidekiq worker. This allows for jobs to be retryable if failures occur, but completed tasks are not retried.
 
 Progress and error states are tracked in the database, so that that you are always aware of what was processed, and if any task fails, where the failure occured in the process, what the error message is, what the stack trace is, so you know what's happening and you can always retry the job from the failed task.
 
@@ -25,7 +25,7 @@ $ gem install back_ops
 Copy the migration from the gem to your application, then run migrations.
 
 ```bash
-$ rails g back_ops:install
+$ rails g back_ops:install --skip
 $ rails db:migrate
 ```
 
@@ -40,25 +40,28 @@ module Subscriptions
       def self.call(subscription)
         BackOps::Worker.perform_async({
           subscription_id: subscription.id
-        }, [
-          Subscriptions::Actions::Fulfillment::ChargeCreditCard,
-          Subscriptions::Actions::Fulfillment::SendEmailReceipt
-        ])
+        }, {
+          main: [
+            Subscriptions::Actions::Fulfillment::ChargeCreditCard,
+            Subscriptions::Actions::Fulfillment::SetupSubscription,
+            Subscriptions::Actions::Fulfillment::SendEmailReceipt
+          ]
+        })
       end
     end
   end
 end
 ```
 
-Each action receives the operation object which contains the context.
+Each action receives an object with access to all global variables as follows.
 
 ```ruby
 module Subscriptions
   module Actions
     module Fulfillment
       class ChargeCreditCard
-        def self.call(operation)
-          subscription_id = operation.get(:subscription_id)
+        def self.call(action)
+          subscription_id = action.get(:subscription_id)
           subscription = Subscription.find(subscription_id)
           # ...
         end
@@ -71,9 +74,90 @@ end
 You now also have full transparency into each operation and can view it in the admin section by invoking the following code.
 
 ```ruby
-params = { 'subscription_id' => subscription.id }
-operation = BackOps::Operation.includes(:actions).where("name = 'Subscriptions::Operations::Fulfillment' AND context @> ?", params.to_json).first
+operation = BackOps::Operation.includes(:actions).
+            where(name: 'Subscriptions::Operations::Fulfillment').
+            globals_contains(subscription_id: subscription.id).
+            first
 ```
+
+## Branches
+
+Sometimes you need to step through an operation based on conditions. You can accomplish this by using branches. To set this up, define a set of branches that your process can take up front, as follows:
+
+```ruby
+module Subscriptions
+  module Operations
+    class Fullfillment
+      def self.call(subscription)
+        BackOps::Worker.perform_async({
+          subscription_id: subscription.id
+        }, {
+          main: [
+            Subscriptions::Actions::Fulfillment::ChargeCreditCard,
+            Subscriptions::Actions::Fulfillment::SendEmailReceipt
+          ],
+          red_subscriptions: [
+            Subscriptions::Actions::Fulfillment::SetupRedSubscription
+          ],
+          blue_subscriptions: [
+            Subscriptions::Actions::Fulfillment::SetupBlueSubscription
+          ]
+        })
+      end
+    end
+  end
+end
+```
+
+You can then jump to these branches in the code as follows:
+
+```ruby
+module Subscriptions
+  module Actions
+    module Fulfillment
+      class ChargeCreditCard
+        def self.call(action)
+          subscription_id = action.get(:subscription_id)
+          subscription = Subscription.find(subscription_id)
+          # ...
+
+          # The following will force the next action
+          # to be the first action defined in the
+          # :red_subscriptions branch.
+          action.jump_to(:red_subscriptions) if subscription.is_red?
+
+          # OR
+
+          # The following will force the next action
+          # to be the specified action defined in the
+          # :blue_subscriptions branch.
+          action.jump_to(blue_subscriptions: Subscriptions::Actions::Fulfillment::SetupBlueSubscription) if subscription.is_blue?
+        end
+      end
+    end
+  end
+end
+
+# When you're done, jump back to the main branch as follows
+
+module Subscriptions
+  module Actions
+    module Fulfillment
+      class SetupBlueSubscription
+        def self.call(action)
+          subscription_id = action.get(:subscription_id)
+          subscription = Subscription.find(subscription_id)
+          # ...
+
+          action.jump_to(main: Subscriptions::Actions::Fulfillment::SendEmailReceipt)
+        end
+      end
+    end
+  end
+end
+```
+
+**NOTE:** Jump does not stop the rest of the action from being processed. It merely sets a pointer to the next action to be processed when the current action is complete. To exit out of an action, simply `return`.
 
 
 ## Contributing
