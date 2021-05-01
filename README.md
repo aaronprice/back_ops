@@ -8,8 +8,8 @@ Progress and error states are tracked in the database, so that that you are alwa
 
 - [Installation](#installation)
 - [Usage](#usage)
-- [Branches](#branches)
-- [Delayed Tasks](#delayed-tasks)
+  - [Branches](#branches)
+  - [Delayed Tasks](#delayed-tasks)
 - [Contributing](#contributing)
 - [License](#license)
 
