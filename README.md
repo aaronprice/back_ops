@@ -4,6 +4,15 @@ Back Ops is intended for background processing of jobs that require multiple tas
 
 Progress and error states are tracked in the database, so that that you are always aware of what was processed, and if any task fails, where the failure occured in the process, what the error message is, what the stack trace is, so you know what's happening and you can always retry the job from the failed task.
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Branches](#branches)
+- [Delayed Tasks](#delayed-tasks)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Installation
 Add this line to your application's Gemfile:
 
@@ -21,7 +30,7 @@ Or install it yourself as:
 $ gem install back_ops
 ```
 
-## Install migrations
+### Install migrations
 Copy the migration from the gem to your application, then run migrations.
 
 ```bash
@@ -158,6 +167,35 @@ end
 ```
 
 **NOTE:** Jump does not stop the rest of the action from being processed. It merely sets a pointer to the next action to be processed when the current action is complete. To exit out of an action, simply `return`.
+
+## Delayed Tasks
+
+Let's say you want to one particular action of an operation at a specific time. Like if you want to send a gift to a user on their birthday. You can use the following:
+
+```ruby
+module Transaction
+  module Operations
+    class Fullfillment
+      def self.call(transaction)
+        BackOps::Worker.perform_async({
+          transaction_id: transaction.id
+        }, {
+          main: [
+            Transaction::Actions::Fulfillment::ChargeCreditCard,
+            Transaction::Actions::Fulfillment::SendEmailReceipt,
+            [
+              Transaction::Actions::Fulfillment::SendGiftcardToRecipient, {
+                perform_at: transaction.deliver_at
+              }
+            ]
+          ]
+        })
+      end
+    end
+  end
+end
+```
+
 
 
 ## Contributing
