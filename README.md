@@ -70,9 +70,13 @@ module Subscriptions
     module Fulfillment
       class ChargeCreditCard
         def self.call(action)
+          # Get items from the global context as follows
           subscription_id = action.get(:subscription_id)
           subscription = Subscription.find(subscription_id)
           # ...
+
+          # Set items in the global context as follows
+          action.set(:transaction_id, "ch_a34wa4fw4a4btasfd")
         end
       end
     end
